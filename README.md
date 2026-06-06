@@ -3,16 +3,17 @@
 End-to-end DevOps workflow combining Infrastructure as Code with automated CI/CD pipeline.
 
 ## Architecture
-
+```
 GitHub Push
-↓
+   ↓
 Jenkins Pipeline
 ├── Run Tests
 ├── Terraform Plan + Apply → AWS EC2 provisioned
 ├── Docker Build + Push to Docker Hub
 └── SSH Deploy to EC2
-↓
+   ↓  
 App live on internet
+```
 
 ## Pipeline Stages
 | Stage | Tool | What happens |
@@ -34,6 +35,7 @@ App live on internet
 
 ## Project Structure
 
+```
 Devops Automation Platform/
 ├── app/               # Node.js application
 │   ├── app.js
@@ -44,5 +46,5 @@ Devops Automation Platform/
 │   ├── main.tf
 │   ├── variables.tf
 │   └── outputs.tf
-├── Jenkinsfile        # CI/CD Pipeline
-└── README.md
+└── Jenkinsfile        # CI/CD Pipeline
+```
