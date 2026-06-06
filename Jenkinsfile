@@ -26,31 +26,32 @@ pipeline {
             }
         }
 
-        stage('Terraform Plan') {
-            steps {
-                echo 'Planning infrastructure'
-                dir('terraform') {
-                    sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
-                }
-            }
+      stage('Terraform Plan') {
+    steps {
+        echo 'Planning infrastructure'
+        dir('terraform') {
+            sh 'terraform init'
+            sh 'terraform plan'
         }
+    }
+}
 
-        stage('Terraform Apply') {
-            steps {
-                echo 'Provisioning AWS infrastructure'
-                dir('terraform') {
-                    sh 'terraform apply -auto-approve tfplan'
-                    script {
-                        env.EC2_IP = sh(
-                            script: 'terraform output -raw ec2_public_ip',
-                            returnStdout: true
-                        ).trim()
-                    }
-                }
-                echo "EC2 provisioned at: ${env.EC2_IP}"
+     stage('Terraform Apply') {
+    steps {
+        echo 'Provisioning AWS infrastructure'
+        dir('terraform') {
+            sh 'terraform init'
+            sh 'terraform apply -auto-approve'
+            script {
+                env.EC2_IP = sh(
+                    script: 'terraform output -raw ec2_public_ip',
+                    returnStdout: true
+                ).trim()
             }
         }
+        echo "EC2 provisioned at: ${env.EC2_IP}"
+    }
+}
 
         stage('Build Docker Image') {
             steps {
