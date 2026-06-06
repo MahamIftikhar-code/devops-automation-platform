@@ -30,29 +30,38 @@ pipeline {
     steps {
         echo 'Planning infrastructure'
         dir('terraform') {
-            sh 'terraform init'
-            sh 'terraform plan'
+            withCredentials([
+                string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+            ]) {
+                sh 'terraform init -upgrade'
+                sh 'terraform plan'
+            }
         }
     }
 }
 
-     stage('Terraform Apply') {
+stage('Terraform Apply') {
     steps {
         echo 'Provisioning AWS infrastructure'
         dir('terraform') {
-            sh 'terraform init'
-            sh 'terraform apply -auto-approve'
-            script {
-                env.EC2_IP = sh(
-                    script: 'terraform output -raw ec2_public_ip',
-                    returnStdout: true
-                ).trim()
+            withCredentials([
+                string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+            ]) {
+                sh 'terraform init -upgrade'
+                sh 'terraform apply -auto-approve'
+                script {
+                    env.EC2_IP = sh(
+                        script: 'terraform output -raw ec2_public_ip',
+                        returnStdout: true
+                    ).trim()
+                }
             }
         }
         echo "EC2 provisioned at: ${env.EC2_IP}"
     }
 }
-
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
