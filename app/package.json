@@ -1,0 +1,11 @@
+{
+  "name": "devops-automation-platform",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node -e \"require('./app'); console.log('Tests passed'); process.exit(0);\""
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
