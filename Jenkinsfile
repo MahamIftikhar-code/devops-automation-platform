@@ -96,6 +96,7 @@ stage('Terraform Apply') {
                     keyFileVariable: 'SSH_KEY'
                 )]) {
                     sh """
+                     chmod 400 \$SSH_KEY
                         sleep 30
                         ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${env.EC2_IP} '
                             docker pull ${DOCKER_IMAGE}:latest &&
