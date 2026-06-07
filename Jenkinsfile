@@ -26,42 +26,43 @@ pipeline {
             }
         }
 
-      stage('Terraform Plan') {
-    steps {
-        echo 'Planning infrastructure'
-        dir('terraform') {
-            withCredentials([
-                string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-                string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
-            ]) {
-                sh 'terraform init -upgrade'
-                sh 'terraform plan'
-            }
-        }
-    }
-}
-
-stage('Terraform Apply') {
-    steps {
-        echo 'Provisioning AWS infrastructure'
-        dir('terraform') {
-            withCredentials([
-                string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-                string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
-            ]) {
-                sh 'terraform init -upgrade'
-                sh 'terraform apply -auto-approve'
-                script {
-                    env.EC2_IP = sh(
-                        script: 'terraform output -raw ec2_public_ip',
-                        returnStdout: true
-                    ).trim()
+        stage('Terraform Plan') {
+            steps {
+                echo 'Planning infrastructure'
+                dir('terraform') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh 'terraform init -upgrade'
+                        sh 'terraform plan'
+                    }
                 }
             }
         }
-        echo "EC2 provisioned at: ${env.EC2_IP}"
-    }
-}
+
+        stage('Terraform Apply') {
+            steps {
+                echo 'Provisioning AWS infrastructure'
+                dir('terraform') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh 'terraform init -upgrade'
+                        sh 'terraform apply -auto-approve'
+                        script {
+                            env.EC2_IP = sh(
+                                script: 'terraform output -raw ec2_public_ip',
+                                returnStdout: true
+                            ).trim()
+                        }
+                    }
+                }
+                echo "EC2 provisioned at: ${env.EC2_IP}"
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
@@ -88,25 +89,27 @@ stage('Terraform Apply') {
             }
         }
 
-       stage('Deploy to EC2') {
-    steps {
-        sh """
-            ssh -i /home/ubuntu/devops-key.pem \
-                -o StrictHostKeyChecking=no \
-                ubuntu@${env.EC2_IP} '
-                docker pull ${DOCKER_IMAGE}:latest &&
-                docker stop flagship-app 2>/dev/null || true &&
-                docker rm flagship-app 2>/dev/null || true &&
-                docker run -d \
-                    --name flagship-app \
-                    --restart unless-stopped \
-                    -p 4000:4000 \
-                    ${DOCKER_IMAGE}:latest
-            '
-        """
-        echo "App live at: http://${env.EC2_IP}:4000"
-    }
-}
+        stage('Deploy to EC2') {
+            steps {
+                sh """
+                    ssh -i /home/ubuntu/devops-key.pem \
+                        -o StrictHostKeyChecking=no \
+                        ubuntu@${env.EC2_IP} '
+                        docker pull ${DOCKER_IMAGE}:latest &&
+                        docker stop flagship-app 2>/dev/null || true &&
+                        docker rm flagship-app 2>/dev/null || true &&
+                        docker run -d \
+                            --name flagship-app \
+                            --restart unless-stopped \
+                            -p 4000:4000 \
+                            ${DOCKER_IMAGE}:latest
+                    '
+                """
+                echo "App live at: http://${env.EC2_IP}:4000"
+            }
+        }
+
+    }  
 
     post {
         success {
@@ -117,4 +120,5 @@ stage('Terraform Apply') {
             echo 'Pipeline failed. Check logs above.'
         }
     }
-}
+
+}  
