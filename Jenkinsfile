@@ -88,32 +88,25 @@ stage('Terraform Apply') {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                echo "Deploying to ${env.EC2_IP}"
-                withCredentials([sshUserPrivateKey(
-                    credentialsId: 'ec2-ssh-key',
-                    keyFileVariable: 'SSH_KEY'
-                )]) {
-                    sh """
-                     chmod 400 \$SSH_KEY
-                        sleep 30
-                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@${env.EC2_IP} '
-                            docker pull ${DOCKER_IMAGE}:latest &&
-                            docker stop flagship-app 2>/dev/null || true &&
-                            docker rm flagship-app 2>/dev/null || true &&
-                            docker run -d \\
-                                --name flagship-app \\
-                                --restart unless-stopped \\
-                                -p 4000:4000 \\
-                                ${DOCKER_IMAGE}:latest
-                        '
-                    """
-                }
-                echo "App live at: http://${env.EC2_IP}:4000"
-            }
-        }
+       stage('Deploy to EC2') {
+    steps {
+        sh """
+            ssh -i /home/ubuntu/devops-key.pem \
+                -o StrictHostKeyChecking=no \
+                ubuntu@${env.EC2_IP} '
+                docker pull ${DOCKER_IMAGE}:latest &&
+                docker stop flagship-app 2>/dev/null || true &&
+                docker rm flagship-app 2>/dev/null || true &&
+                docker run -d \
+                    --name flagship-app \
+                    --restart unless-stopped \
+                    -p 4000:4000 \
+                    ${DOCKER_IMAGE}:latest
+            '
+        """
+        echo "App live at: http://${env.EC2_IP}:4000"
     }
+}
 
     post {
         success {
